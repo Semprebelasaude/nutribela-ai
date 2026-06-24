@@ -23,13 +23,33 @@ export function buscarReceitas(params: {
   let resultado = todas;
 
   if (params.q) {
-    const termo = params.q.toLowerCase();
-    resultado = resultado.filter(
-      (r) =>
-        r.nome.toLowerCase().includes(termo) ||
-        r.ingredientes.some((i) => i.toLowerCase().includes(termo)) ||
-        (r.tags || []).some((t) => t.toLowerCase().includes(termo))
-    );
+    // Tokeniza a query e busca receitas que contenham QUALQUER um dos termos
+    const termos = params.q.toLowerCase().split(/\s+/).filter((t) => t.length > 2);
+    if (termos.length > 0) {
+      resultado = resultado.filter((r) =>
+        termos.some(
+          (termo) =>
+            r.nome.toLowerCase().includes(termo) ||
+            r.ingredientes.some((i) => i.toLowerCase().includes(termo)) ||
+            (r.tags || []).some((t) => t.toLowerCase().includes(termo)) ||
+            r.modulo.toLowerCase().includes(termo)
+        )
+      );
+      // Rankear: mais termos correspondentes = mais relevante
+      resultado = resultado.sort((a, b) => {
+        const scoreA = termos.filter(
+          (t) =>
+            a.nome.toLowerCase().includes(t) ||
+            a.modulo.toLowerCase().includes(t)
+        ).length;
+        const scoreB = termos.filter(
+          (t) =>
+            b.nome.toLowerCase().includes(t) ||
+            b.modulo.toLowerCase().includes(t)
+        ).length;
+        return scoreB - scoreA;
+      });
+    }
   }
 
   if (params.ingredientes && params.ingredientes.length > 0) {
