@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ erro: "Nenhuma receita para processar" }, { status: 400 });
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const receitasTexto = receitas
       .slice(0, 5)
