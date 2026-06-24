@@ -177,7 +177,14 @@ export default function ReceitaDetalhe({ id }: Props) {
     fetch(`/api/receitas?id=${encodeURIComponent(id)}`)
       .then((r) => r.json())
       .then((data) => {
-        const lista: ReceitaEnriquecida[] = Array.isArray(data) ? data : data.receitas ?? [];
+        // API retorna objeto único quando ?id= é passado
+        const lista: ReceitaEnriquecida[] = Array.isArray(data)
+          ? data
+          : data.receitas
+          ? data.receitas
+          : data.id
+          ? [data]
+          : [];
         const encontrada = lista.find((r) => r.id === id) ?? lista[0] ?? null;
         if (encontrada) {
           setReceita(encontrada);
