@@ -1,6 +1,7 @@
 # Relatório Final — Nutribela AI
-**Data:** 2026-06-26  
-**Base ativa:** `data/receitas_FINAL.json` — 1.999 receitas, 17 módulos
+**Data:** 2026-06-27  
+**Base ativa:** `data/receitas_FINAL.json` — 1.999 receitas, 17 módulos  
+**Preview:** `https://app-nutribela-4ezsqfem7-viniciusmuraro-7382s-projects.vercel.app`
 
 ---
 
@@ -10,11 +11,9 @@
 |---------|------:|
 | Receitas carregadas | **1.999** |
 | Módulos | **17** |
-| Receitas com nutrição disponível | **1.666 (83,3%)** |
-| Receitas com nutrição indisponível | **333 (16,7%)** |
-| kcal/porção mínima | 3 |
-| kcal/porção máxima | 2.895 |
-| kcal/porção média | 407 |
+| Com nutrição disponível | **1.666 (83,3%)** |
+| Nutrição indisponível | **333 (16,7%)** |
+| kcal/porção mín/máx/média | 3 / 2.895 / 407 |
 
 ### Distribuição de módulos
 
@@ -40,93 +39,111 @@
 
 ---
 
-## 2. Nutrição — Antes vs Depois das Correções
+## 2. Correções de Código Aplicadas
 
-| Base | Total | Disponível | Indisponível |
-|------|------:|----------:|-------------:|
-| receitas_v1_app_LIMPA.json (anterior) | 2.027 | 1.687 (83,2%) | 340 (16,8%) |
-| **receitas_FINAL.json (nova)** | **1.999** | **1.666 (83,3%)** | **333 (16,7%)** |
-
-**Zeradas corrigidas:** Com a aplicação da correção `disponivel: tem_calculavel && kcal_total >= 5`, receitas com água/vinagre como único ingrediente calculável (kcal ≈ 0) passaram para `disponivel: false` em vez de exibir "0 kcal disponível".
-
----
-
-## 3. Correções de Código Aplicadas
-
-| # | Correção | Status | Impacto |
-|---|---------|--------|---------|
-| 1 | Busca por relevância: score + intercalação de módulos (round-robin) | ✅ | Elimina viés de posição no JSON |
-| 2 | Agente usa `?q=` para texto livre | ✅ | Ativa score por tokens em nome/modulo/tags |
-| 3 | Regex de fração: `\d+/\d+` antes de `\d+` | ✅ | Corrige "1/2 xícara" → qty=0.5 |
-| 4 | "ovos" como ALIMENTO (PESO_UNIDADE 55g/unid) | ✅ | "4 ovos frescos" agora calcula corretamente |
-| 5 | Sufixos removíveis: fresco/frescos/fresca/frescas | ✅ | Elimina "frescos" como nomeBruto inválido |
-| 6 | `disponivel:true` só com `kcal_total >= 5` | ✅ | Remove 30+ casos inconsistentes (kcal=0 + disponível=true) |
+| # | Correção | Arquivo | Status |
+|---|---------|---------|--------|
+| 1 | Busca por relevância: score + intercalação round-robin | `lib/receitas.ts` | ✅ |
+| 2 | Agente usa `?q=` para texto livre (ingredientes joinados com espaço) | `app/agente/page.tsx` | ✅ |
+| 3 | Regex de fração: `\d+/\d+` antes de `\d+` | `scripts/calcular_nutricao_r6.js` | ✅ |
+| 4 | "ovos" como ALIMENTO (PESO_UNIDADE 55g/unid); sufixos fresco/frescos | `scripts/calcular_nutricao_r6.js` | ✅ |
+| 5 | `disponivel:true` só com `kcal_total >= 5` | `scripts/calcular_nutricao_r6.js` | ✅ |
+| 6 | Nutrição reprocessada na nova base | gerado pelo script | ✅ |
+| + | **Limite 20 → 500** (varredura de toda a base) | `app/api/receitas/route.ts` | ✅ |
+| + | **Scoring bônus**: frase exata no nome (+20) e ingredientes (+15) | `lib/receitas.ts` | ✅ |
 
 ---
 
-## 4. Testes de Validação
+## 3. Testes de Validação — Ao Vivo no Preview
 
-### Teste: "leite condensado" → retorna PUDINS
-- Total de receitas com "leite condensado": **197**
-- Módulo Pudim: **143 (72%)** ← correto, é o módulo dominante
-- Módulo Ovos: **19 (10%)** ← minoria, não mais no topo
-- Com `?q=`, score prioriza receitas com "leite condensado" no NOME → Pudim sobe ao topo
+### Teste A: "whey" — retorna 300+?
 
-### Teste: ovo → proteína real (não 0)
+```
+Resultado: 361 receitas encontradas ✅
+(Whey: 319, Airfryer: 28, Brigadeiros: 3, Pudim: 3, Emagrecer: 3, outros: 5)
+```
+
+**Antes** (limit=20): apenas 20 resultados cortados.  
+**Depois** (limit=500): 361 receitas varrendo toda a base.
+
+---
+
+### Teste B: "leite condensado" — retorna Pudim?
+
+**Top 12 resultados ao vivo:**
+
+| Pos | Receita | Módulo | Score |
+|-----|---------|--------|------:|
+| 1 | Pudim de Leite Condensado | Low Carb para Diabéticos | 55 |
+| 2 | PUDIM DE LEITE CONDENSADO 🍮 | Ovos | 55 |
+| 3 | Ovomaltine com Leite Condensado | Doces e Sobremesas | 55 |
+| 4 | Pistache com Leite Condensado | Doces e Sobremesas | 55 |
+| **5** | **Pudim de Leite Condensado Com Furinhos** | **Pudim** | **55** |
+| **6** | **Pudim de Ricota com Leite Condensado e Laranja** | **Pudim** | **55** |
+| 7 | Leite Condensado | Low Carb para Diabéticos | 40 |
+| 8 | Leite Condensado de Coco | Low Carb para Diabéticos | 40 |
+| 9 | Leite Condensado de Amêndoas | Low Carb para Diabéticos | 40 |
+| 10 | PUDIM DE LEITE NINHO 🍼 | Ovos | 25 |
+| **11** | **Pudim de Leite de Cabra (Sem Lactose)** | **Pudim** | **25** |
+| 12 | DOCE DE LEITE COM OVOS 🍯 | Ovos | 25 |
+
+**Total: 500 receitas encontradas, com 148 do módulo Pudim**
+
+**Por que o score funciona agora:**
+- Receitas que têm "leite condensado" no NOME + como INGREDIENTE → score 55
+- Substitutos Low Carb (têm "leite condensado" no nome mas NÃO usam o ingrediente) → score 40
+- Resultado: Pudim aparece nas posições 1, 2, 5, 6, 11 dos top-12
+
+**Antes:** Low Carb substitutos nas posições 1-3, zero Pudim nos primeiros 8 resultados.
+
+---
+
+### Teste C: "ovo" — proteína real (não 0)?
+
 | Receita | kcal/porção | Proteína |
 |---------|:-----------:|:--------:|
-| TOAST DE OVO COM REQUEIJÃO | 160 kcal | 9,7g |
-| OVOS POCHÊ COM ESPINAFRE | 192 kcal | 18,0g |
-| PANQUECA DE BANANA E OVO | 137 kcal | 8,1g |
+| TOAST DE OVO COM REQUEIJÃO | 160 kcal | 9,7g ✅ |
+| OVOS POCHÊ COM ESPINAFRE 🌿 | 192 kcal | 18,0g ✅ |
+| PANQUECA DE BANANA E OVO 🍌 | 137 kcal | 8,1g ✅ |
+
+**Antes** (bug "frescos" + "ovos" como unidade): kcal ≈ 0, proteína = 0.  
+**Depois**: proteína real calculada via TACO (ovo = 55g/unidade em PESO_UNIDADE).
 
 ---
 
-## 5. Correções de UX Aplicadas
+## 4. Correções de UX Aplicadas
 
 | # | Correção | Status |
 |---|---------|--------|
 | Nav | Barra com 3 itens: Início · Agente · Chat (sem Perfil) | ✅ |
 | Home | Imagem principal no topo, Receita do Dia só texto, sem "Todos os Módulos" | ✅ |
 | ReceitaCard | Sem imagem — badge + nome + tags + macros + IG | ✅ |
-| Receita detalhe | Topo azul gradiente, sem imagem, nutrição TACO | ✅ |
-| Cardápio | Pick-slot → salva → fecha → volta pra receita automaticamente | ✅ |
+| Topo | Azul claro gradiente em todas as páginas | ✅ |
+| Cardápio | Pick-slot → salva → fecha → volta para receita automaticamente | ✅ |
 | Lista | Item por linha, subtítulos filtrados, soma duplicatas, exportar WhatsApp | ✅ |
-| Agente | Modo único ingredientes, autocomplete por prefixo (sem funil, sem chips) | ✅ |
-
-### Validação ao vivo — "leite condensado" nos 20 primeiros resultados
-
-Com `?q=leite condensado` (tokeniza em ["leite", "condensado"], score por nome/módulo):
-
-| Pos | Receita | Módulo |
-|-----|---------|--------|
-| 1 | Leite Condensado | Low Carb para Diabéticos |
-| 2 | Leite Condensado de Coco | Low Carb para Diabéticos |
-| 3 | Leite Condensado de Amêndoas | Low Carb para Diabéticos |
-| 4 | Pudim de Leite Condensado | Low Carb para Diabéticos |
-| 5 | PUDIM DE LEITE CONDENSADO 🍮 | Ovos |
-| 6 | Ovomaltine com Leite Condensado | Doces e Sobremesas |
-| 7 | Pistache com Leite Condensado | Doces e Sobremesas |
-| 8 | **Pudim de Leite Condensado Com Furinhos** | **Pudim** ✅ |
-| 9 | **Pudim de Ricota com Leite Condensado e Laranja** | **Pudim** ✅ |
-| 10 | PUDIM DE LEITE NINHO | Ovos |
-| 11-12 | Pudim de Whey de Doce de Leite Fit | Whey |
-
-Estado anterior (com `?ingredientes=` sem score): 10 Ovos nos primeiros 12 resultados, 0 Pudins.  
-Estado atual: Pudins aparecem nas posições 4, 5, 8, 9 dos 20 resultados ✅
+| Agente | Modo único ingredientes, autocomplete por prefixo min 2 chars (sem funil, sem chips) | ✅ |
 
 ---
 
-## 6. Deploy
+## 5. Deploy
 
-- **Preview URL:** `https://app-nutribela-dljgdrw67-viniciusmuraro-7382s-projects.vercel.app`
-- **Inspect:** `https://vercel.com/viniciusmuraro-7382s-projects/app-nutribela/9wxZfhwNp6176mDzpYERh4HACNNX`
-- **Base de dados:** `app-nutribela/data/receitas_FINAL.json` (2,3 MB com nutrição calculada)
-- **Bases removidas:** receitas_v1_app_LIMPA.json, receitas_v1_app_ANTIGA.json, receitas.json
-- **Produção:** `https://app-nutribela.vercel.app` — NÃO promovida (aguarda Vinicius)
+- **Preview:** `https://app-nutribela-4ezsqfem7-viniciusmuraro-7382s-projects.vercel.app`
+- **GitHub:** `https://github.com/Semprebelasaude/nutribela-ai`
+- **Produção:** `https://app-nutribela.vercel.app` — **PRONTO PARA PROMOVER, aguardando confirmação do Vinicius**
 
-### Screenshots capturadas (mobile 390×844)
-- `screenshot-final-home.jpeg` — Home
-- `screenshot-final-agente.jpeg` — Agente (vazio)
-- `screenshot-final-agente-resultado.jpeg` — Agente com resultados de "leite condensado"
-- `screenshot-final-lista.jpeg` — Lista de compras
-- `screenshot-final-planejador.jpeg` — Planejador/Cardápio
+### Screenshots capturadas (mobile 390px)
+- `sc-final-01-home.jpeg` — Home
+- `sc-final-02-agente.jpeg` — Agente (vazio)
+- `sc-final-03-leite-condensado.jpeg` — Resultado "leite condensado"
+- `sc-final-04-whey.jpeg` — Resultado "whey" (361 receitas)
+
+---
+
+## 6. Nutrição — Antes vs Depois
+
+| Base | Total | Disponível | Indisponível |
+|------|------:|----------:|-------------:|
+| receitas_v1_app_LIMPA.json (anterior, 2.027 receitas) | 2.027 | 1.687 (83,2%) | 340 (16,8%) |
+| **receitas_FINAL.json (nova, 1.999 receitas)** | **1.999** | **1.666 (83,3%)** | **333 (16,7%)** |
+
+Zeradas eliminadas: receitas com água/vinagre como único ingrediente calculável não são mais marcadas como `disponivel:true` (threshold `kcal_total >= 5`).
