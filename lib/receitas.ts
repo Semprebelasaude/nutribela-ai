@@ -48,19 +48,19 @@ export function buscarReceitas(params: {
             r.modulo.toLowerCase().includes(termo)
         )
       );
-      // Rankear: mais termos correspondentes = mais relevante
+      // Rankear: termos no nome/módulo × 10 + bônus por frase exata no nome (+20) e nos ingredientes (+15)
+      // Isso garante que receitas que USAM o ingrediente fiquem acima de receitas que são o ingrediente
+      const q_lower = params.q.toLowerCase();
       resultado = resultado.sort((a, b) => {
-        const scoreA = termos.filter(
-          (t) =>
-            a.nome.toLowerCase().includes(t) ||
-            a.modulo.toLowerCase().includes(t)
-        ).length;
-        const scoreB = termos.filter(
-          (t) =>
-            b.nome.toLowerCase().includes(t) ||
-            b.modulo.toLowerCase().includes(t)
-        ).length;
-        return scoreB - scoreA;
+        const calcScore = (r: Receita) =>
+          termos.filter(
+            (t) =>
+              r.nome.toLowerCase().includes(t) ||
+              r.modulo.toLowerCase().includes(t)
+          ).length * 10
+          + (r.nome.toLowerCase().includes(q_lower) ? 20 : 0)
+          + (r.ingredientes.some((i) => i.toLowerCase().includes(q_lower)) ? 15 : 0);
+        return calcScore(b) - calcScore(a);
       });
     }
   }

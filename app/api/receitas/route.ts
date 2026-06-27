@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   const aleatorio = searchParams.get("aleatorio");
   const modulosCount = searchParams.get("modulosCount");
   const classificacoes = searchParams.get("classificacoes");
-  const limit = parseInt(searchParams.get("limit") || "20");
+  const limit = parseInt(searchParams.get("limit") || "500");
 
   if (id) {
     const receita = buscarPorId(id);

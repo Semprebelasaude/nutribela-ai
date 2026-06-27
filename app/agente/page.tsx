@@ -129,7 +129,6 @@ export default function AgentePage() {
       const params = new URLSearchParams({
         q: ingredientesValidos.join(" "),
         objetivo,
-        limit: "20",
       });
       const res = await fetch(`/api/receitas?${params.toString()}`);
       if (!res.ok) throw new Error("Falha ao buscar receitas");
