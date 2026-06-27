@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { X, Plus, ShoppingCart, CalendarDays } from "lucide-react";
 import {
   getCardapio,
+  addCardapio,
   removeCardapio,
   setLista,
 } from "@/lib/storage";
@@ -45,6 +46,9 @@ export default function PlanejadorPage() {
   const [receitasCache, setReceitasCache] = useState<Record<string, ReceitaEnriquecida>>({});
   const [loading, setLoading] = useState(true);
   const [gerandoLista, setGerandoLista] = useState(false);
+  const [adicionandoId, setAdicionandoId] = useState<string | null>(null);
+  const [adicionandoPorcoes, setAdicionandoPorcoes] = useState<number>(2);
+  const [adicionandoReceita, setAdicionandoReceita] = useState<ReceitaEnriquecida | null>(null);
 
   const carregarCardapio = useCallback(async () => {
     const items = getCardapio();
@@ -67,6 +71,35 @@ export default function PlanejadorPage() {
   }, []);
 
   useEffect(() => { carregarCardapio(); }, [carregarCardapio]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("adicionando");
+    const p = parseInt(params.get("porcoes") || "2");
+    if (id) {
+      setAdicionandoId(id);
+      setAdicionandoPorcoes(p);
+      fetch(`/api/receitas?id=${id}`)
+        .then(r => r.json())
+        .then(data => { if (data?.id) setAdicionandoReceita(data); })
+        .catch(() => {});
+    }
+  }, []);
+
+  function adicionarNoSlot(dia: number, refeicao: ItemCardapio["refeicao"]) {
+    if (!adicionandoId || !adicionandoReceita) return;
+    const existente = getCell(dia, refeicao);
+    if (existente) {
+      const nomeExistente = receitasCache[existente.receitaId]?.nome || "outra receita";
+      if (!window.confirm(`Já existe "${nomeExistente}" nesse horário. Substituir?`)) return;
+      removeCardapio(existente.receitaId, dia, refeicao);
+    }
+    addCardapio({ receitaId: adicionandoId, dia, refeicao, porcoes: adicionandoPorcoes });
+    setAdicionandoId(null);
+    setAdicionandoReceita(null);
+    carregarCardapio();
+    window.history.back();
+  }
 
   const handleRemover = (receitaId: string, dia: number, refeicao: string) => {
     removeCardapio(receitaId, dia, refeicao);
@@ -143,6 +176,37 @@ export default function PlanejadorPage() {
         </div>
       </header>
 
+      {adicionandoReceita && (
+        <div
+          style={{
+            background: "var(--verde)",
+            color: "white",
+            padding: "14px 16px",
+            textAlign: "center",
+            fontSize: 14,
+            fontWeight: 600,
+            position: "sticky",
+            top: 0,
+            zIndex: 50,
+          }}
+        >
+          Toque em um horário para adicionar:
+          <br />
+          <strong style={{ fontSize: 15 }}>{adicionandoReceita.nome}</strong>
+          <button
+            onClick={() => {
+              setAdicionandoId(null);
+              setAdicionandoReceita(null);
+              window.history.replaceState({}, "", "/planejador");
+            }}
+            style={{ marginLeft: 12, background: "rgba(255,255,255,0.25)", border: "none", borderRadius: 8, color: "white", padding: "4px 10px", cursor: "pointer", fontSize: 12, fontWeight: 700 }}
+          >
+            Cancelar
+          </button>
+        </div>
+      )}
+
+
       <main className="container-app" style={{ paddingTop: 20 }}>
         {loading ? (
           <div style={{ textAlign: "center", padding: "40px 0", color: "var(--texto-suave)" }}>
@@ -213,7 +277,19 @@ export default function PlanejadorPage() {
                           <div
                             key={`${key}-${diaIdx}`}
                             className="planner-cell planner-cell-filled"
-                            style={{ position: "relative", flexDirection: "column", gap: 3, alignItems: "center", justifyContent: "center", padding: "5px 3px" }}
+                            style={{
+                              position: "relative",
+                              flexDirection: "column",
+                              gap: 3,
+                              alignItems: "center",
+                              justifyContent: "center",
+                              padding: "5px 3px",
+                              cursor: adicionandoReceita ? "pointer" : "default",
+                              background: adicionandoReceita ? "#F0FFF7" : undefined,
+                              outline: adicionandoReceita ? "2px solid var(--verde)" : undefined,
+                              transition: "background 0.2s",
+                            }}
+                            onClick={adicionandoReceita ? () => adicionarNoSlot(diaIdx, key) : undefined}
                           >
                             <button
                               onClick={() => handleRemover(item.receitaId, diaIdx, key)}
@@ -260,10 +336,22 @@ export default function PlanejadorPage() {
                         <div
                           key={`${key}-${diaIdx}`}
                           className="planner-cell planner-cell-empty"
-                          onClick={() => { window.location.href = "/agente"; }}
-                          title="Adicionar receita"
+                          onClick={() => {
+                            if (adicionandoReceita) {
+                              adicionarNoSlot(diaIdx, key);
+                            } else {
+                              window.location.href = "/agente";
+                            }
+                          }}
+                          title={adicionandoReceita ? "Adicionar aqui" : "Adicionar receita"}
+                          style={{
+                            cursor: "pointer",
+                            background: adicionandoReceita ? "#F0FFF7" : undefined,
+                            outline: adicionandoReceita ? "2px solid var(--verde)" : undefined,
+                            transition: "background 0.2s",
+                          }}
                         >
-                          <Plus size={14} strokeWidth={2.5} />
+                          <Plus size={14} strokeWidth={2.5} color={adicionandoReceita ? "var(--verde)" : undefined} />
                         </div>
                       );
                     })}

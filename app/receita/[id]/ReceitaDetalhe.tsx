@@ -1,163 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Heart, ArrowLeft, ChevronDown } from "lucide-react";
+import { Heart, ArrowLeft } from "lucide-react";
 import NutritionPanel from "@/components/NutritionPanel";
 import PortionAdjuster from "@/components/PortionAdjuster";
-import { addFavorito, removeFavorito, isFavorito, addCardapio, getLista, setLista } from "@/lib/storage";
-import type { ReceitaEnriquecida, ItemCardapio, ItemLista } from "@/lib/types";
-
-const FALLBACK_IMG =
-  "https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?w=800&auto=compress";
-
-const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
-const REFEICOES: { value: ItemCardapio["refeicao"]; label: string }[] = [
-  { value: "cafe", label: "Café da manhã" },
-  { value: "almoco", label: "Almoço" },
-  { value: "jantar", label: "Jantar" },
-  { value: "lanche", label: "Lanche" },
-];
-
-interface ModalCardapioProps {
-  receita: ReceitaEnriquecida;
-  porcoes: number;
-  onFechar: () => void;
-}
-
-function ModalCardapio({ receita, porcoes, onFechar }: ModalCardapioProps) {
-  const [dia, setDia] = useState(0);
-  const [refeicao, setRefeicao] = useState<ItemCardapio["refeicao"]>("almoco");
-  const [adicionado, setAdicionado] = useState(false);
-
-  function confirmar() {
-    addCardapio({ receitaId: receita.id, dia, refeicao, porcoes });
-    setAdicionado(true);
-    setTimeout(onFechar, 900);
-  }
-
-  const selectStyle: React.CSSProperties = {
-    width: "100%",
-    padding: "12px 14px",
-    border: "2px solid var(--borda)",
-    borderRadius: 12,
-    fontSize: 15,
-    background: "white",
-    color: "var(--texto)",
-    outline: "none",
-    appearance: "none",
-    cursor: "pointer",
-  };
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.5)",
-        zIndex: 200,
-        display: "flex",
-        alignItems: "flex-end",
-        justifyContent: "center",
-        padding: "0 0 env(safe-area-inset-bottom, 0)",
-      }}
-      onClick={(e) => { if (e.target === e.currentTarget) onFechar(); }}
-    >
-      <div
-        style={{
-          background: "white",
-          borderRadius: "24px 24px 0 0",
-          padding: "24px 20px 32px",
-          width: "100%",
-          maxWidth: 480,
-          boxShadow: "0 -8px 32px rgba(0,0,0,0.15)",
-        }}
-      >
-        {/* Handle */}
-        <div
-          style={{
-            width: 36,
-            height: 4,
-            background: "#E0D5D2",
-            borderRadius: 2,
-            margin: "0 auto 20px",
-          }}
-        />
-
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h3 style={{ fontWeight: 800, fontSize: 18, margin: 0, color: "var(--texto)" }}>
-            Adicionar ao Cardápio
-          </h3>
-          <button
-            onClick={onFechar}
-            style={{
-              background: "none",
-              border: "none",
-              fontSize: 20,
-              cursor: "pointer",
-              color: "var(--texto-suave)",
-              lineHeight: 1,
-              padding: 4,
-            }}
-            aria-label="Fechar"
-          >
-            ×
-          </button>
-        </div>
-
-        <p style={{ fontSize: 14, color: "var(--texto-suave)", margin: "0 0 20px", fontWeight: 500 }}>
-          {receita.nome}
-        </p>
-
-        {/* Dia */}
-        <div style={{ marginBottom: 14, position: "relative" }}>
-          <label style={{ fontSize: 12, fontWeight: 700, color: "var(--texto-suave)", display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-            Dia da semana
-          </label>
-          <div style={{ position: "relative" }}>
-            <select
-              value={dia}
-              onChange={(e) => setDia(Number(e.target.value))}
-              style={selectStyle}
-            >
-              {DIAS.map((d, i) => (
-                <option key={d} value={i}>{d}</option>
-              ))}
-            </select>
-            <ChevronDown size={16} style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--texto-suave)" }} />
-          </div>
-        </div>
-
-        {/* Refeição */}
-        <div style={{ marginBottom: 24, position: "relative" }}>
-          <label style={{ fontSize: 12, fontWeight: 700, color: "var(--texto-suave)", display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-            Refeição
-          </label>
-          <div style={{ position: "relative" }}>
-            <select
-              value={refeicao}
-              onChange={(e) => setRefeicao(e.target.value as ItemCardapio["refeicao"])}
-              style={selectStyle}
-            >
-              {REFEICOES.map(({ value, label }) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-            <ChevronDown size={16} style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--texto-suave)" }} />
-          </div>
-        </div>
-
-        <button
-          className="btn-verde"
-          style={{ width: "100%", justifyContent: "center", fontSize: 16 }}
-          onClick={confirmar}
-          disabled={adicionado}
-        >
-          {adicionado ? "Adicionado!" : "Adicionar"}
-        </button>
-      </div>
-    </div>
-  );
-}
+import { addFavorito, removeFavorito, isFavorito, getLista, setLista } from "@/lib/storage";
+import type { ReceitaEnriquecida, ItemLista } from "@/lib/types";
 
 interface Props {
   id: string;
@@ -168,8 +16,6 @@ export default function ReceitaDetalhe({ id }: Props) {
   const [porcoes, setPorcoes] = useState(2);
   const [favorito, setFavorito] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [loadingMacros, setLoadingMacros] = useState(false);
-  const [mostrarModal, setMostrarModal] = useState(false);
   const [feedbackLista, setFeedbackLista] = useState(false);
 
   // Busca inicial da receita
@@ -189,9 +35,9 @@ export default function ReceitaDetalhe({ id }: Props) {
         if (encontrada) {
           setReceita(encontrada);
           setFavorito(isFavorito(encontrada.id));
-          // Enriquecer com Gemini se não tiver macros
-          if (!encontrada.calorias) {
-            enriquecerMacros(encontrada);
+          // Inicializar porções com base nas porções base da nutrição
+          if (encontrada.nutricao?.porcoes_base) {
+            setPorcoes(encontrada.nutricao.porcoes_base);
           }
         }
       })
@@ -199,47 +45,29 @@ export default function ReceitaDetalhe({ id }: Props) {
       .finally(() => setLoading(false));
   }, [id]);
 
-  async function enriquecerMacros(receitaBase: ReceitaEnriquecida) {
-    setLoadingMacros(true);
-    try {
-      const res = await fetch("/api/gemini", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          receitas: [receitaBase],
-          pedido: "detalhar e calcular macros",
-          porcoes: 2,
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const enriquecida: ReceitaEnriquecida[] = data.receitas ?? [];
-        if (enriquecida.length > 0) {
-          setReceita((prev) => prev ? { ...prev, ...enriquecida[0] } : prev);
-        }
-      }
-    } catch {
-      // ignora falha silenciosamente
-    } finally {
-      setLoadingMacros(false);
-    }
-  }
-
-  // Recalcula ingredientes ajustados quando muda porções
+  // Recalcula ingredientes por código local (sem Gemini)
   function ingredientesParaExibir(): string[] {
     if (!receita) return [];
-    if (receita.ingredientes_ajustados && receita.porcoes && porcoes !== receita.porcoes) {
-      // proporcional simples
-      const fator = porcoes / (receita.porcoes || 2);
-      return receita.ingredientes.map((ing) => {
-        return ing.replace(/(\d+(?:[.,]\d+)?)/g, (match) => {
-          const num = parseFloat(match.replace(",", "."));
-          const ajustado = Math.round(num * fator * 10) / 10;
-          return String(ajustado).replace(".", ",");
-        });
+    const base = receita.nutricao?.porcoes_base ?? 2;
+    if (porcoes === base) return receita.ingredientes;
+    const fator = porcoes / base;
+    return receita.ingredientes.map((ing) => {
+      // Multiplicar frações unicode também
+      let texto = ing.replace(/½/g, "0.5").replace(/⅓/g, "0.333").replace(/¼/g, "0.25").replace(/¾/g, "0.75");
+      texto = texto.replace(/(\d+(?:[.,]\d+)?)/g, (match) => {
+        const num = parseFloat(match.replace(",", "."));
+        const novo = num * fator;
+        // Arredondamento amigável
+        if (Math.abs(novo - Math.round(novo)) < 0.05) return String(Math.round(novo));
+        if (Math.abs(novo * 2 - Math.round(novo * 2)) < 0.05) {
+          const int = Math.floor(novo);
+          const frac = novo - int;
+          if (Math.abs(frac - 0.5) < 0.05) return int > 0 ? `${int}½` : "½";
+        }
+        return (Math.round(novo * 10) / 10).toString().replace(".", ",");
       });
-    }
-    return receita.ingredientes_ajustados ?? receita.ingredientes;
+      return texto;
+    });
   }
 
   function toggleFavorito() {
@@ -253,11 +81,26 @@ export default function ReceitaDetalhe({ id }: Props) {
     }
   }
 
+  // Processa linha de ingrediente para a lista de compras:
+  // "Recheio: frango desfiado" → "frango desfiado" (strip do label)
+  // "Para o recheio:" → null (label puro, ignorar)
+  function processarParaLista(ing: string): string | null {
+    const t = ing.trim();
+    // Label puro: termina com ":" ou é "Para o/a ..."
+    if (t.endsWith(":") || /^para\s+(o|a|os|as)\s+/i.test(t)) return null;
+    // Label com ingrediente: "Recheio: frango desfiado"
+    const match = t.match(/^(recheio|massa|calda|cobertura|molho|base|montagem|recheio\s+\d+|camada)\s*:\s*(.+)/i);
+    if (match) return match[2].trim();
+    return t;
+  }
+
   function adicionarNaLista() {
     if (!receita) return;
     const listaAtual = getLista();
     const idsExistentes = new Set(listaAtual.map((i) => i.id));
     const novosItens: ItemLista[] = ingredientesParaExibir()
+      .map((desc) => processarParaLista(desc))
+      .filter((desc): desc is string => desc !== null)
       .map((desc) => ({
         id: `${receita.id}-${desc.slice(0, 20).replace(/\s/g, "-")}-${Date.now()}`,
         descricao: desc,
@@ -274,8 +117,8 @@ export default function ReceitaDetalhe({ id }: Props) {
   if (loading) {
     return (
       <div style={{ minHeight: "100dvh", background: "var(--fundo)" }}>
-        {/* Hero skeleton */}
-        <div className="skeleton" style={{ width: "100%", aspectRatio: "4/3" }} />
+        {/* Header skeleton */}
+        <div className="skeleton" style={{ width: "100%", height: 180 }} />
         <div style={{ padding: "20px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
           <div className="skeleton" style={{ height: 20, width: 80, borderRadius: 8 }} />
           <div className="skeleton" style={{ height: 28, width: "70%", borderRadius: 8 }} />
@@ -301,104 +144,48 @@ export default function ReceitaDetalhe({ id }: Props) {
   }
 
   const ingredientes = ingredientesParaExibir();
+  const porcoes_base = receita.nutricao?.porcoes_base ?? 2;
 
   return (
     <div style={{ minHeight: "100dvh", paddingBottom: 100, background: "var(--fundo)" }}>
-      {/* IMAGEM HERO */}
-      <div style={{ position: "relative", aspectRatio: "4/3", overflow: "hidden", background: "#F5EDE9" }}>
-        <img
-          src={receita.imagem_url || FALLBACK_IMG}
-          alt={receita.nome}
-          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-          loading="eager"
-        />
-
-        {/* Gradiente overlay */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 50%)",
-          }}
-        />
-
-        {/* Nome sobre imagem */}
-        <div style={{ position: "absolute", bottom: 20, left: 20, right: 70 }}>
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: "rgba(255,255,255,0.8)",
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-            }}
-          >
-            {receita.modulo}
-          </span>
-          <h1
-            style={{
-              color: "white",
-              fontSize: 22,
-              fontWeight: 800,
-              margin: "4px 0 0",
-              lineHeight: 1.3,
-              textShadow: "0 2px 8px rgba(0,0,0,0.35)",
-            }}
-          >
-            {receita.nome}
-          </h1>
-        </div>
-
-        {/* Botão voltar */}
+      {/* HEADER SEM IMAGEM */}
+      <div
+        style={{
+          background: "linear-gradient(135deg, var(--azul, #2E86C1) 0%, var(--azul-dark, #1A5276) 100%)",
+          padding: "60px 20px 40px",
+          position: "relative",
+        }}
+      >
         <button
           onClick={() => window.history.back()}
           aria-label="Voltar"
           style={{
-            position: "absolute",
-            top: 16,
-            left: 16,
-            background: "rgba(0,0,0,0.4)",
-            border: "none",
-            borderRadius: "50%",
-            width: 40,
-            height: 40,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            position: "absolute", top: 16, left: 16,
+            background: "rgba(0,0,0,0.25)", border: "none", borderRadius: "50%",
+            width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center",
             cursor: "pointer",
-            backdropFilter: "blur(4px)",
           }}
         >
           <ArrowLeft size={20} color="white" />
         </button>
-
-        {/* Botão favoritar */}
         <button
           onClick={toggleFavorito}
-          aria-label={favorito ? "Remover dos favoritos" : "Favoritar receita"}
+          aria-label={favorito ? "Remover dos favoritos" : "Favoritar"}
           style={{
-            position: "absolute",
-            top: 16,
-            right: 16,
-            background: "rgba(255,255,255,0.92)",
-            border: "none",
-            borderRadius: "50%",
-            width: 40,
-            height: 40,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            position: "absolute", top: 16, right: 16,
+            background: "rgba(255,255,255,0.92)", border: "none", borderRadius: "50%",
+            width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center",
             cursor: "pointer",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
           }}
         >
-          <Heart
-            size={20}
-            strokeWidth={2}
-            color={favorito ? "var(--coral)" : "#9E9EA8"}
-            fill={favorito ? "var(--coral)" : "none"}
-          />
+          <Heart size={20} strokeWidth={2} color={favorito ? "var(--coral)" : "#9E9EA8"} fill={favorito ? "var(--coral)" : "none"} />
         </button>
+        <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 8 }}>
+          {receita.modulo}
+        </span>
+        <h1 style={{ color: "white", fontSize: 22, fontWeight: 800, margin: 0, lineHeight: 1.3, textShadow: "0 2px 8px rgba(0,0,0,0.2)" }}>
+          {receita.nome}
+        </h1>
       </div>
 
       {/* ÁREA DE CONTEÚDO */}
@@ -411,16 +198,6 @@ export default function ReceitaDetalhe({ id }: Props) {
           position: "relative",
         }}
       >
-        {/* Badge módulo */}
-        <span className="badge badge-coral" style={{ marginBottom: 10, display: "inline-block" }}>
-          {receita.modulo}
-        </span>
-
-        {/* Nome */}
-        <h2 style={{ fontSize: 22, fontWeight: 800, color: "var(--texto)", margin: "0 0 6px", lineHeight: 1.3 }}>
-          {receita.nome}
-        </h2>
-
         {/* Rende */}
         {receita.rende && (
           <p style={{ fontSize: 14, color: "var(--texto-suave)", margin: "0 0 20px" }}>
@@ -447,31 +224,18 @@ export default function ReceitaDetalhe({ id }: Props) {
 
         {/* NUTRITION PANEL */}
         <div style={{ marginBottom: 24 }}>
-          {loadingMacros && !receita.calorias ? (
-            <div
-              style={{
-                background: "#FFF0EE",
-                borderRadius: 16,
-                padding: 20,
-                textAlign: "center",
-              }}
-            >
-              <div
-                className="skeleton"
-                style={{ height: 60, borderRadius: 10, marginBottom: 10 }}
-              />
-              <p style={{ fontSize: 12, color: "var(--texto-suave)", margin: 0 }}>
-                Calculando macros...
-              </p>
-            </div>
-          ) : (
+          {receita.nutricao && receita.nutricao.disponivel !== false ? (
             <NutritionPanel
-              calorias={receita.calorias}
-              proteina={receita.proteina}
-              carboidrato={receita.carboidrato}
-              gordura={receita.gordura}
-              indice_glicemico={receita.indice_glicemico}
+              calorias={Math.round(receita.nutricao.kcal_porcao * (porcoes / porcoes_base))}
+              proteina={Math.round(receita.nutricao.proteina_g * (porcoes / porcoes_base) * 10) / 10}
+              carboidrato={Math.round(receita.nutricao.carboidrato_g * (porcoes / porcoes_base) * 10) / 10}
+              gordura={Math.round(receita.nutricao.gordura_g * (porcoes / porcoes_base) * 10) / 10}
+              indice_glicemico={receita.nutricao.indice_glicemico === "baixo" ? "Baixo" : receita.nutricao.indice_glicemico === "alto" ? "Alto" : "Médio"}
             />
+          ) : (
+            <div style={{ background: "#FFF0EE", borderRadius: 16, padding: 16, textAlign: "center" }}>
+              <p style={{ margin: 0, fontSize: 13, color: "var(--texto-suave)" }}>Nutrição indisponível para esta receita</p>
+            </div>
           )}
         </div>
 
@@ -524,7 +288,9 @@ export default function ReceitaDetalhe({ id }: Props) {
           <button
             className="btn-verde"
             style={{ width: "100%", justifyContent: "center", fontSize: 15 }}
-            onClick={() => setMostrarModal(true)}
+            onClick={() => {
+              window.location.href = `/planejador?adicionando=${receita.id}&porcoes=${porcoes}`;
+            }}
           >
             Adicionar ao Cardápio
           </button>
@@ -563,14 +329,6 @@ export default function ReceitaDetalhe({ id }: Props) {
         </div>
       </div>
 
-      {/* MODAL CARDÁPIO */}
-      {mostrarModal && (
-        <ModalCardapio
-          receita={receita}
-          porcoes={porcoes}
-          onFechar={() => setMostrarModal(false)}
-        />
-      )}
     </div>
   );
 }

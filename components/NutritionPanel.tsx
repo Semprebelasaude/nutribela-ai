@@ -99,7 +99,7 @@ export default function NutritionPanel({
 
       {/* Rodapé */}
       <p style={{ margin: 0, fontSize: 10, color: "var(--texto-suave)", textAlign: "center" }}>
-        * valores estimados
+        Valores nutricionais estimados, podem variar conforme marcas e modo de preparo.
       </p>
     </div>
   );

@@ -7,6 +7,9 @@
   --verde: #27AE60;
   --verde-light: #2ECC71;
   --amarelo: #F39C12;
+  --azul: #2E86C1;
+  --azul-light: #3498DB;
+  --azul-dark: #1A5276;
   --fundo: #FFF8F5;
   --fundo-card: #FFFFFF;
   --texto: #1A1A2E;
@@ -249,7 +252,7 @@ body {
 
 /* Header da página */
 .page-header {
-  background: linear-gradient(135deg, var(--coral) 0%, var(--coral-light) 100%);
+  background: linear-gradient(135deg, var(--azul) 0%, var(--azul-light) 100%);
   padding: 24px 20px 32px;
   color: white;
   position: relative;

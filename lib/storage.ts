@@ -52,16 +52,11 @@ export function getCardapio(): ItemCardapio[] {
 
 export function addCardapio(item: ItemCardapio): void {
   const cardapio = getCardapio();
-  const existe = cardapio.findIndex(
-    (c) => c.receitaId === item.receitaId && c.dia === item.dia && c.refeicao === item.refeicao
+  // Remove qualquer receita existente no mesmo dia+refeicao (um por slot)
+  const filtrado = cardapio.filter(
+    (c) => !(c.dia === item.dia && c.refeicao === item.refeicao)
   );
-  if (existe >= 0) {
-    const novo = [...cardapio];
-    novo[existe] = item;
-    set(KEYS.CARDAPIO, novo);
-  } else {
-    set(KEYS.CARDAPIO, [...cardapio, item]);
-  }
+  set(KEYS.CARDAPIO, [...filtrado, item]);
 }
 
 export function removeCardapio(receitaId: string, dia: number, refeicao: string): void {

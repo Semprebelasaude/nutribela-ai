@@ -1,20 +1,16 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Home, ChefHat, CalendarDays, ShoppingCart, Heart, User } from "lucide-react";
+import { Home, ChefHat, MessageCircle } from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/",           label: "Início",    Icon: Home         },
-  { href: "/agente",     label: "Agente",    Icon: ChefHat      },
-  { href: "/planejador", label: "Cardápio",  Icon: CalendarDays },
-  { href: "/lista",      label: "Lista",     Icon: ShoppingCart },
-  { href: "/favoritos",  label: "Favoritos", Icon: Heart        },
-  { href: "/perfil",     label: "Perfil",    Icon: User         },
+  { href: "/",       label: "Início", Icon: Home          },
+  { href: "/agente", label: "Agente", Icon: ChefHat       },
+  { href: "/chat",   label: "Chat",   Icon: MessageCircle },
 ];
 
 export default function BottomNav() {
   const pathname = usePathname();
-
   return (
     <nav className="nav-bottom">
       {NAV_ITEMS.map(({ href, label, Icon }) => {

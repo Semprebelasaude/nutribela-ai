@@ -10,6 +10,58 @@ import {
 } from "@/lib/storage";
 import { ItemLista } from "@/lib/types";
 
+function ehSubtitulo(texto: string): boolean {
+  const t = texto.trim();
+  return (
+    t.endsWith(":") ||
+    /^para\s+(o|a|os|as|os?)\s+/i.test(t) ||
+    /^(recheio|massa|calda|cobertura|molho|base|montagem)\s*:/i.test(t)
+  );
+}
+
+function normalizarNomeIng(desc: string): string {
+  return desc
+    .toLowerCase()
+    .replace(/^\d+[\d.,/½⅓¼¾]*\s*(g|kg|ml|l|colher(es)?(\s+de\s+(sopa|chá))?|xícara(s)?|unidade(s)?|pitada(s)?)?\s*(de\s+)?/i, "")
+    .trim();
+}
+
+function somarLista(lista: ItemLista[]): ItemLista[] {
+  const grupos: Record<string, ItemLista[]> = {};
+  for (const item of lista) {
+    const chave = normalizarNomeIng(item.descricao);
+    if (!grupos[chave]) grupos[chave] = [];
+    grupos[chave].push(item);
+  }
+  const resultado: ItemLista[] = [];
+  for (const [, itens] of Object.entries(grupos)) {
+    if (itens.length === 1) {
+      resultado.push(itens[0]);
+      continue;
+    }
+    let somaTotal = 0;
+    let unidade = "";
+    let podeSomar = true;
+    for (const it of itens) {
+      const match = it.descricao.match(/^(\d+(?:[.,]\d+)?)\s*(g|kg|ml|l|colheres?|xícaras?|unidades?)?/i);
+      if (!match) { podeSomar = false; break; }
+      somaTotal += parseFloat(match[1].replace(",", "."));
+      if (!unidade) unidade = match[2] || "";
+    }
+    if (podeSomar && somaTotal > 0) {
+      const nomeBase = normalizarNomeIng(itens[0].descricao);
+      resultado.push({
+        ...itens[0],
+        descricao: `${somaTotal % 1 === 0 ? somaTotal : somaTotal.toFixed(1)}${unidade ? ` ${unidade}` : ""} ${nomeBase}`.trim(),
+        id: itens[0].id,
+      });
+    } else {
+      resultado.push(...itens);
+    }
+  }
+  return resultado;
+}
+
 function agruparPorCategoria(lista: ItemLista[]): Record<string, ItemLista[]> {
   return lista.reduce((acc, item) => {
     const cat = item.categoria || "Outros";
@@ -41,13 +93,14 @@ function ordenarCategorias(grupos: Record<string, ItemLista[]>): string[] {
 export default function ListaPage() {
   const [lista, setListaState] = useState<ItemLista[]>([]);
   const [novoItem, setNovoItem] = useState("");
+  const [copiadoMsg, setCopiadoMsg] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setListaState(getLista());
+    setListaState(somarLista(getLista().filter(i => !ehSubtitulo(i.descricao))));
   }, []);
 
-  const atualizar = () => setListaState(getLista());
+  const atualizar = () => setListaState(somarLista(getLista().filter(i => !ehSubtitulo(i.descricao))));
 
   const adicionarItem = () => {
     const desc = novoItem.trim();
@@ -85,6 +138,28 @@ export default function ListaPage() {
     setLista([]);
     setListaState([]);
   };
+
+  function formatarParaExportar(): string {
+    return lista
+      .filter(i => !i.marcado && !ehSubtitulo(i.descricao))
+      .map(i => `• ${i.descricao}`)
+      .join("\n");
+  }
+
+  function exportarWhatsApp() {
+    const texto = formatarParaExportar();
+    if (!texto) return;
+    window.open(`https://wa.me/?text=${encodeURIComponent("Lista de Compras Nutribela:\n\n" + texto)}`, "_blank");
+  }
+
+  function copiarTexto() {
+    const texto = formatarParaExportar();
+    if (!texto) return;
+    navigator.clipboard.writeText(texto).then(() => {
+      setCopiadoMsg(true);
+      setTimeout(() => setCopiadoMsg(false), 2000);
+    });
+  }
 
   const totalMarcados = lista.filter((i) => i.marcado).length;
   const grupos = agruparPorCategoria(lista);
@@ -190,7 +265,9 @@ export default function ListaPage() {
                     {cat}
                   </h2>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {itens.map((item) => (
+                    {itens.map((item) => {
+                      if (ehSubtitulo(item.descricao)) return null;
+                      return (
                       <div
                         key={item.id}
                         className={`check-item${item.marcado ? " marcado" : ""}`}
@@ -222,9 +299,8 @@ export default function ListaPage() {
                               fontWeight: 500,
                               color: "var(--texto)",
                               display: "block",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
+                              whiteSpace: "normal",
+                              wordBreak: "break-word",
                             }}
                           >
                             {item.descricao}
@@ -254,7 +330,8 @@ export default function ListaPage() {
                           <X size={16} strokeWidth={2} />
                         </button>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </section>
               );
@@ -270,6 +347,46 @@ export default function ListaPage() {
                 paddingBottom: 8,
               }}
             >
+              {lista.length > 0 && (
+                <div style={{ display: "flex", gap: 10, marginBottom: 0 }}>
+                  <button
+                    onClick={exportarWhatsApp}
+                    style={{
+                      flex: 1,
+                      background: "#25D366",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 12,
+                      padding: "12px 0",
+                      fontWeight: 700,
+                      fontSize: 14,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                    }}
+                  >
+                    WhatsApp
+                  </button>
+                  <button
+                    onClick={copiarTexto}
+                    style={{
+                      flex: 1,
+                      background: "white",
+                      color: "var(--texto)",
+                      border: "2px solid var(--borda)",
+                      borderRadius: 12,
+                      padding: "12px 0",
+                      fontWeight: 700,
+                      fontSize: 14,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {copiadoMsg ? "Copiado!" : "Copiar texto"}
+                  </button>
+                </div>
+              )}
               {totalMarcados > 0 && (
                 <button
                   className="btn-ghost"

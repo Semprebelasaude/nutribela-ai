@@ -1,3 +1,16 @@
+export interface Nutricao {
+  porcoes_base: number;
+  kcal_total: number;
+  kcal_porcao: number;
+  proteina_g: number;
+  carboidrato_g: number;
+  gordura_g: number;
+  indice_glicemico: "baixo" | "médio" | "alto";
+  estimado: boolean;
+  ingredientes_nao_calculados: string[];
+  disponivel?: boolean; // false quando todos ingredientes não mapeáveis
+}
+
 export interface Receita {
   id: string;
   modulo: string;
@@ -6,16 +19,27 @@ export interface Receita {
   modo_preparo: string;
   rende?: string;
   tags?: string[];
+  nutricao?: Nutricao;
+  tipo_geral?: "doce" | "salgado";
+  estilos?: string[];
+  tipo_prato?: string;
+}
+
+export interface ReceitaClassificacao {
+  tipo_geral: string;
+  estilos: string[];
+  tipo_prato: string;
 }
 
 export interface ReceitaEnriquecida extends Receita {
+  ingredientes_ajustados?: string[];
+  porcoes?: number;
+  // campos legados (manter para compatibilidade com NutritionPanel enquanto não migra)
   calorias?: number;
   proteina?: number;
   carboidrato?: number;
   gordura?: number;
   indice_glicemico?: string;
-  ingredientes_ajustados?: string[];
-  porcoes?: number;
   imagem_url?: string;
 }
 
